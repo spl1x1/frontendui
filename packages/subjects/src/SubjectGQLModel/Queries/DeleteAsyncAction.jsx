@@ -1,5 +1,4 @@
 import { createQueryStrLazy } from "@hrbolek/uoisfrontend-gql-shared";
-import { LargeFragment } from "./Fragments";
 import { createAsyncGraphQLAction2 } from "../../../../dynamic/src/Core/createAsyncGraphQLAction2";
 
 /**
@@ -12,6 +11,9 @@ import { createAsyncGraphQLAction2 } from "../../../../dynamic/src/Core/createAs
  * Vrací:
  * - SubjectGQLModelDeleteError při chybě (s detaily: msg, code, failed, location, input)
  * - Úspěšné smazání nevrací data (jen prázdný výsledek)
+ *
+ * DŮLEŽITÉ: Nepoužíváme LargeFragment v Entity, protože načítání semestrů
+ * během delete transakce způsobuje transakční konflikty v backendu.
  */
 const DeleteMutationStr = `
 mutation subjectDelete(
@@ -26,7 +28,12 @@ mutation subjectDelete(
   ) {
     ... on SubjectGQLModelDeleteError {
       __typename
-      Entity { ...Large }
+      Entity {
+        __typename
+        id
+        lastchange
+        name
+      }
       msg
       code
       failed
@@ -37,8 +44,8 @@ mutation subjectDelete(
 }
 `
 
-// Vytvoření lazy-loaded GraphQL query s fragmentem pro entitu
-const DeleteMutation = createQueryStrLazy(`${DeleteMutationStr}`, LargeFragment)
+// Vytvoření lazy-loaded GraphQL query bez složitých fragmentů
+const DeleteMutation = createQueryStrLazy(`${DeleteMutationStr}`)
 
 /**
  * Async action pro smazání entity Subject.

@@ -27,43 +27,18 @@ import { createAsyncGraphQLAction2 } from "../../../../dynamic/src/Core/createAs
  * @module SemesterDeleteAsyncAction
  */
 
-/**
- * Fragment pro načtení dat semestru (používá se při chybě pro zobrazení aktuálního stavu).
- */
-const SemesterLinkFragmentStr = `
-fragment SemesterLinkDelete on SemesterGQLModel {
-  __typename
-  id
-  lastchange
-  order
-  mandatory
-  credits
-  classificationtypeId
-  subjectId
-}
-`
-
 const DeleteMutationStr = `
-mutation semesterDelete($id: UUID!, $lastchange: DateTime!) {
+mutation semesterDeleteMutation($id: UUID!, $lastchange: DateTime!) {
   semesterDelete(semester: {id: $id, lastchange: $lastchange}) {
-    ... on SemesterGQLModelDeleteError {
-      __typename
-      failed
-      msg
-      code
-      location
-      input
-      Entity {
-        ...SemesterLinkDelete
-      }
-    }
-    ... on SemesterGQLModel {
-      ...SemesterLinkDelete
+    msg
+    failed
+    Entity {
+      id
+      lastchange
     }
   }
 }
 `
 
-const SemesterLinkFragment = createQueryStrLazy(`${SemesterLinkFragmentStr}`)
-const DeleteMutation = createQueryStrLazy(`${DeleteMutationStr}`, SemesterLinkFragment)
+const DeleteMutation = createQueryStrLazy(`${DeleteMutationStr}`)
 export const SemesterDeleteAsyncAction = createAsyncGraphQLAction2(DeleteMutation)

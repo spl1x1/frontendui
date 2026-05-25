@@ -31,16 +31,28 @@ export const SemestersManager = ({
     // Lokální kopie semestrů pro editaci (synchronizovaná s props)
     const [localSemesters, setLocalSemesters] = useState([]);
 
+    // State for delete confirmation modal
+    const [deleteConfirmation, setDeleteConfirmation] = useState({
+        show: false,
+        semesterId: null,
+        semesterOrder: null
+    });
+
 
     /**
      * Synchronizace lokálního stavu s props.
+     * Use JSON.stringify to detect deep changes in semesters array.
      */
     useEffect(() => {
         setLocalSemesters([...(semesters || [])]);
-    }, [semesters]);
+    }, [JSON.stringify(semesters)]);
 
-    // Seřazení semestrů podle pořadí (order)
-    const sortedSemesters = [...localSemesters].sort((a, b) => (a.order || 0) - (b.order || 0));
+    // Seřazení semestrů podle pořadí (order) - ensure numeric comparison
+    const sortedSemesters = [...localSemesters].sort((a, b) => {
+        const orderA = parseInt(a.order, 10) || 0;
+        const orderB = parseInt(b.order, 10) || 0;
+        return orderA - orderB;
+    });
 
     // Nejvyšší pořadí - pro určení pořadí nově přidaného semestru
     const maxOrder = sortedSemesters.reduce((max, s) => Math.max(max, s.order || 0), 0);
@@ -73,12 +85,41 @@ export const SemestersManager = ({
     }, [localSemesters, maxOrder, subjectId, onSemestersChange]);
 
     /**
-     * Odebrání semestru z lokálního seznamu.
+     * Zobrazení potvrzovacího dialogu pro smazání semestru.
+     */
+    const showDeleteConfirmation = useCallback((semesterId) => {
+        const semester = localSemesters.find(s => s.id === semesterId);
+        setDeleteConfirmation({
+            show: true,
+            semesterId,
+            semesterOrder: semester?.order
+        });
+    }, [localSemesters]);
+
+    /**
+     * Zrušení potvrzovacího dialogu.
+     */
+    const cancelDeleteConfirmation = useCallback(() => {
+        setDeleteConfirmation({
+            show: false,
+            semesterId: null,
+            semesterOrder: null
+        });
+    }, []);
+
+    /**
+     * Odebrání semestru z lokálního seznamu (po potvrzení).
      */
     const handleRemoveSemester = useCallback((semesterId) => {
         const newList = localSemesters.filter(s => s.id !== semesterId);
         setLocalSemesters(newList);
         onSemestersChange(newList);
+        // Close confirmation dialog
+        setDeleteConfirmation({
+            show: false,
+            semesterId: null,
+            semesterOrder: null
+        });
     }, [localSemesters, onSemestersChange]);
 
     /**
@@ -157,7 +198,7 @@ export const SemestersManager = ({
                                                 <button
                                                     type="button"
                                                     className="btn btn-outline-danger"
-                                                    onClick={() => handleRemoveSemester(semester.id)}
+                                                    onClick={() => showDeleteConfirmation(semester.id)}
                                                     disabled={disabled}
                                                     title="Odebrat semestr"
                                                 >
@@ -184,6 +225,50 @@ export const SemestersManager = ({
                     + Přidat nový semestr (pořadí: {maxOrder + 1})
                 </button>
             </Label>
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirmation.show && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Potvrzení smazání</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={cancelDeleteConfirmation}
+                                    aria-label="Zavřít"
+                                />
+                            </div>
+                            <div className="modal-body">
+                                <p>
+                                    Opravdu chcete smazat semestr <strong>#{deleteConfirmation.semesterOrder}</strong>?
+                                </p>
+                                <div className="alert alert-warning mb-0">
+                                    <strong>Upozornění:</strong> Pokud semestr obsahuje klasifikace nebo jiná data,
+                                    smazání se nepodaří a bude nutné nejprve odstranit všechna související data.
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={cancelDeleteConfirmation}
+                                >
+                                    Zrušit
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-danger"
+                                    onClick={() => handleRemoveSemester(deleteConfirmation.semesterId)}
+                                >
+                                    Smazat semestr
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

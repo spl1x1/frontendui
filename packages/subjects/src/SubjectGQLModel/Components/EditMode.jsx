@@ -39,6 +39,11 @@ export const EditMode = ({
 
     // Ref to track pending semester changes for live mode
     const semesterTimerRef = useRef(null);
+    // Ref to always have access to the latest originalSemesters in callbacks
+    const originalSemestersRef = useRef(originalSemesters);
+    useEffect(() => {
+        originalSemestersRef.current = originalSemesters;
+    }, [originalSemesters]);
 
     // Reset semesters when item changes
     useEffect(() => {
@@ -87,15 +92,23 @@ export const EditMode = ({
         setSemestersSaving(true);
         setSemestersError(null);
 
+        // Track which semesters failed to delete (for rollback)
+        const failedToDelete = [];
+
         try {
-            const origMap = new Map(originalSemesters.map(s => [s.id, s]));
+            // Use ref to get the most current original semesters (avoids stale closure)
+            const currentOriginalSemesters = originalSemestersRef.current;
+            const origMap = new Map(currentOriginalSemesters.map(s => [s.id, s]));
             const currMap = new Map(semesters.map(s => [s.id, s]));
+
+            // Track updated lastchange values from server responses
+            const lastchangeMap = new Map(currentOriginalSemesters.map(s => [s.id, s.lastchange]));
 
             // Find semesters to create (have _action: 'create' flag)
             const toCreate = semesters.filter(s => s._action === 'create');
 
-            // Find semesters to delete (in original but not in current)
-            const toDelete = originalSemesters.filter(s => !currMap.has(s.id));
+            // Find semesters to delete (in original but not in current, excluding newly created ones)
+            const toDelete = currentOriginalSemesters.filter(s => !currMap.has(s.id) && !s._action);
 
             // Find semesters to update (order changed)
             const toUpdate = semesters.filter(s => {
@@ -106,48 +119,114 @@ export const EditMode = ({
 
             // Execute creates
             for (const semester of toCreate) {
-                await dispatch(SemesterInsertAsyncAction({
+                const response = await dispatch(SemesterInsertAsyncAction({
                     id: semester.id,
                     subjectId: item.id,
                     order: semester.order
                 }, gqlClient));
+                // Extract result from GraphQL response structure
+                const result = response?.data?.semesterInsert || response?.semesterInsert || response;
+                // Store the lastchange from server response for future operations
+                if (result?.id) {
+                    lastchangeMap.set(result.id, result.lastchange);
+                }
             }
 
-            // Execute deletes
+            // Execute deletes - use fresh lastchange from map
             for (const semester of toDelete) {
-                await dispatch(SemesterDeleteAsyncAction({
+                const currentLastchange = lastchangeMap.get(semester.id) || semester.lastchange;
+                // Validate lastchange before making API call
+                if (!currentLastchange) {
+                    console.error('Cannot delete semester - missing lastchange:', semester.id);
+                    failedToDelete.push(semester);
+                    continue;
+                }
+                const response = await dispatch(SemesterDeleteAsyncAction({
                     id: semester.id,
-                    lastchange: semester.lastchange
+                    lastchange: currentLastchange
                 }, gqlClient));
+                // Extract result from GraphQL response structure
+                const result = response?.data?.semesterDelete || response?.semesterDelete || response;
+                // Check for error response
+                if (result?.failed === true) {
+                    // Check for foreign key violation (semester has related data)
+                    if (result?.msg?.includes('ForeignKey') || result?.msg?.includes('foreign key') || result?.msg?.includes('still referenced')) {
+                        // Add to failed list - will be restored to UI
+                        failedToDelete.push(semester);
+                        continue;
+                    }
+                    failedToDelete.push(semester);
+                    continue;
+                }
             }
 
-            // Execute updates
+            // Execute updates - use fresh lastchange from map for each update
             for (const semester of toUpdate) {
-                const orig = origMap.get(semester.id);
-                await dispatch(SemesterUpdateAsyncAction({
+                // Try multiple sources for lastchange: map (from previous ops), semester itself, or original
+                const currentLastchange = lastchangeMap.get(semester.id) || semester.lastchange || origMap.get(semester.id)?.lastchange;
+                // Validate lastchange before making API call
+                if (!currentLastchange) {
+                    console.error('Cannot update semester - missing lastchange:', semester.id);
+                    throw new Error('Nepodařilo se aktualizovat semestr - chybí lastchange');
+                }
+                const response = await dispatch(SemesterUpdateAsyncAction({
                     id: semester.id,
-                    lastchange: orig.lastchange,
+                    lastchange: currentLastchange,
                     subjectId: item.id,
                     order: semester.order
                 }, gqlClient));
+                // Extract result from GraphQL response structure
+                const result = response?.data?.semesterUpdate || response?.semesterUpdate || response;
+                // Check for error response
+                if (result?.__typename?.includes('Error') || result?.failed === true) {
+                    throw new Error(result?.msg || 'Nepodařilo se aktualizovat pořadí semestru');
+                }
+                // Update lastchange for any subsequent operations on this semester
+                if (result?.lastchange) {
+                    lastchangeMap.set(semester.id, result.lastchange);
+                }
             }
 
-            // Update original semesters to reflect saved state (remove _action flags)
-            const savedSemesters = semesters.map(s => {
+            // Build the final semesters list
+            // Start with current semesters (what user wanted)
+            let savedSemesters = semesters.map(s => {
                 const { _action, ...rest } = s;
-                return rest;
+                // Use updated lastchange from server if available
+                const updatedLastchange = lastchangeMap.get(s.id);
+                return updatedLastchange ? { ...rest, lastchange: updatedLastchange } : rest;
             });
+
+            // Add back any semesters that failed to delete
+            for (const failedSemester of failedToDelete) {
+                if (!savedSemesters.some(s => s.id === failedSemester.id)) {
+                    savedSemesters.push(failedSemester);
+                }
+            }
+
+            // Sort by order
+            savedSemesters = savedSemesters.sort((a, b) => (a.order || 0) - (b.order || 0));
+
             setOriginalSemesters(savedSemesters);
             setCurrentSemesters(savedSemesters);
+            setDraft(prev => ({ ...prev, semesters: savedSemesters }));
+
+            // If any deletes failed, show error but don't fail the whole operation
+            if (failedToDelete.length > 0) {
+                setSemestersError(new Error('Nelze smazat semestr - obsahuje klasifikace nebo jiná data'));
+                return false;
+            }
 
             return true;
         } catch (err) {
+            // On error, restore original semesters to UI
+            setCurrentSemesters(originalSemestersRef.current);
+            setDraft(prev => ({ ...prev, semesters: originalSemestersRef.current }));
             setSemestersError(err);
             return false;
         } finally {
             setSemestersSaving(false);
         }
-    }, [dispatch, gqlClient, item?.id, originalSemesters]);
+    }, [dispatch, gqlClient, item?.id, setDraft]);
 
     // Handle semester changes from SemestersManager
     const handleSemestersChange = useCallback((newSemesters) => {

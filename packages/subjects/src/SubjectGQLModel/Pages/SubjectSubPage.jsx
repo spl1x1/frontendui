@@ -48,7 +48,9 @@ export const SubjectSubPage = ({ item }) => {
                 </tr>
                 </thead>
                 <tbody>
-                {(item?.semesters || []).map(semester => (
+                {[...item.semesters]
+                    .sort((a, b) => (parseInt(a.order, 10) || 0) - (parseInt(b.order, 10) || 0))
+                    .map(semester => (
                     <tr key={semester.id}>
                         <td>{semester.order}</td>
                         <td>{semester.id}</td>

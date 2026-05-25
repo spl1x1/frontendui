@@ -31,7 +31,7 @@ fragment Medium on SubjectGQLModel {
     ...RBRoles
   }
   program {
-    __typename id
+    __typename id name
   }
 }
 `
