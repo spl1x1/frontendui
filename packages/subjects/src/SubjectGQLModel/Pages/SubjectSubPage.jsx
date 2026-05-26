@@ -4,6 +4,19 @@ import { Attribute } from "../../../../_template/src/Base/Components"
 import { Link } from "../Components/Link"
 
 /**
+ * Generuje název semestru podle pořadí.
+ * Lichá čísla = zimní semestr, sudá čísla = letní semestr.
+ * @param {number} order - Pořadí semestru (1, 2, 3, ...)
+ * @returns {string} Název semestru, např. "1. ročník zimní"
+ */
+const getSemesterName = (order) => {
+    const orderNum = parseInt(order, 10) || 0
+    const year = Math.ceil(orderNum / 2)
+    const isWinter = orderNum % 2 === 1
+    return `${year}. ročník ${isWinter ? "zimní" : "letní"}`
+}
+
+/**
  * SubjectSubPage - detailní zobrazení entity Subject (readonly).
  *
  * Zobrazuje dvě sekce v CardCapsule komponentách:
@@ -43,6 +56,7 @@ export const SubjectSubPage = ({ item }) => {
                 <thead>
                 <tr>
                     <th>Pořadí</th>
+                    <th>Název</th>
                     <th>ID</th>
                     <th>Last change</th>
                 </tr>
@@ -53,7 +67,8 @@ export const SubjectSubPage = ({ item }) => {
                     .map(semester => (
                     <tr key={semester.id}>
                         <td>{semester.order}</td>
-                        <td>{semester.id}</td>
+                        <td>{getSemesterName(semester.order)}</td>
+                        <td><a href={`/semestr/SemesterGQLModel/${semester.id}`}>{semester.id}</a></td>
                         <td>{item.lastchange}</td>
                     </tr>
                 ))}

@@ -2,6 +2,19 @@ import React, { useState, useCallback, useEffect } from "react";
 import { Label } from "../../../../_template/src/Base/FormControls/Label";
 
 /**
+ * Generuje název semestru podle pořadí.
+ * Lichá čísla = zimní semestr, sudá čísla = letní semestr.
+ * @param {number} order - Pořadí semestru (1, 2, 3, ...)
+ * @returns {string} Název semestru, např. "1. ročník zimní"
+ */
+const getSemesterName = (order) => {
+    const orderNum = parseInt(order, 10) || 0
+    const year = Math.ceil(orderNum / 2)
+    const isWinter = orderNum % 2 === 1
+    return `${year}. ročník ${isWinter ? "zimní" : "letní"}`
+}
+
+/**
  * SemestersManager - Komponenta pro správu semestrů předmětu (Subject).
  *
  * Tato komponenta umožňuje:
@@ -166,6 +179,7 @@ export const SemestersManager = ({
                             <thead className="table-light">
                                 <tr>
                                     <th style={{ width: '70px' }}>Pořadí</th>
+                                    <th style={{ width: '140px' }}>Název</th>
                                     <th>ID</th>
                                     <th style={{ width: '120px' }}>Akce</th>
                                 </tr>
@@ -174,6 +188,7 @@ export const SemestersManager = ({
                                 {sortedSemesters.map((semester, index) => (
                                     <tr key={semester.id}>
                                         <td>{semester.order}</td>
+                                        <td>{getSemesterName(semester.order)}</td>
                                         <td><small className="text-muted">{semester.id}</small></td>
                                         <td>
                                             <div className="btn-group btn-group-sm">
