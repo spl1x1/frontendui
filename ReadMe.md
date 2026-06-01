@@ -1,5 +1,53 @@
 # Změny
 
+## 1.6.2026
+
+- Přidání odkazů na programy a semestry v detailních zobrazeních (`MediumContent.jsx`, `SubjectSubPage.jsx`)
+  - Program ID je nyní klikatelný odkaz na `/program/ProgramGQLModel/{id}`
+  - Semester ID je nyní klikatelný odkaz na `/semestr/SemesterGQLModel/{id}`
+
+## 26.5.2026
+
+- Implementace řazení tabulky (`Table.jsx`)
+  - Nová komponenta `SortableTableHeader` pro zobrazení záhlaví s řazením
+  - Komponenta `SortButton` pro přepínání mezi vzestupným/sestupným řazením
+  - Podpora řazení podle: názvu, anglického názvu, programu, počtu semestrů, data změny
+  - Třífázové řazení: žádné → vzestupně → sestupně → žádné
+  - Funkce `getSortValue` a `compareValues` pro správné řazení textů i čísel
+
+- Generování názvů semestrů (`SemestersManager.jsx`, `SubjectSubPage.jsx`)
+  - Funkce `getSemesterName(order)` - generuje název podle pořadí
+  - Lichá čísla = zimní semestr, sudá = letní semestr
+  - Formát: "X. ročník zimní/letní" (např. "1. ročník zimní", "2. ročník letní")
+
+- Rozšíření správy semestrů a CRUD operací (`EditMode.jsx`, `SemestersManager.jsx`, `Create.jsx`, `Delete.jsx`)
+  - **Potvrzovací popup před smazáním semestru** s varováním o závislostech (foreign key)
+  - **Rollback při selhání** - semestr se obnoví v UI, pokud smazání selže (obsahuje klasifikace)
+  - **Podpora semestrů při vytváření Subjectu** - semestry se automaticky vytvoří po vytvoření předmětu
+  - **Validace programu** v create dialogu - vyžaduje výběr programu před uložením
+  - **Kaskádové mazání** - při smazání Subjectu se nejdřív smažou všechny semestry
+  - Přidání názvu programu do seznamu (nové pole `name` v GraphQL fragmentu)
+  - Vlastní `Table` komponenta pro Subject se sloupci: název, anglický název, program, počet semestrů, nástroje
+
+## 20.5.2026
+
+- Nová komponenta `EditMode` pro univerzální editaci entity Subject (`EditMode.jsx`)
+  - Přepínač mezi automatickým (live) a manuálním (confirm) ukládáním
+  - Podpora správy semestrů s debounce auto-save (600ms)
+  - Sledování změn semestrů (přidání, odebrání, změna pořadí)
+  - Automatické ukládání změn na server v live režimu
+  - Tlačítka "Uložit změny" a "Zrušit změny" v confirm režimu
+  - Indikátor ukládání a zobrazení chyb
+
+- Změna přidávání semestrů (`SemestersManager.jsx`)
+  - Místo výběru z existujících se vytváří nový semestr s generovaným UUID
+  - Nové semestry mají flag `_action: 'create'` pro rozlišení od existujících
+  - Zjednodušení UI - pouze tlačítko "Přidat nový semestr"
+
+- Aktualizace `useEditAction` hooku (`useEditAction.js`)
+  - Rozšířená podpora pro přepínání auto-save režimu
+  - Nové vlastnosti: `autoSaveEnabled`, `toggleAutoSave`, `effectiveMode`
+
 ## 11.5.2026
 
 - Přidání správy semestrů předmětu (SemestersManager) - nová funkcionalita pro:
