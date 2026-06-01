@@ -48,7 +48,7 @@ export const SubjectSubPage = ({ item }) => {
                     {item?.program?.name}
                 </Attribute>
                 <Attribute label="ID">
-                    {item?.program?.id}
+                    <a href={`/program/ProgramGQLModel/${item?.program?.id}`}>{item?.program?.id}</a>
                 </Attribute>
             </CardCapsule>
             <CardCapsule title="Semestry">

@@ -123,7 +123,9 @@ export const MediumContent = ({ item, children}) => {
             )}
             {(item?.program?.name || item?.program?.id) && (
                 <Attribute label="Program">
-                    {item.program.name || item.program.id}
+                    <a href={`/program/ProgramGQLModel/${item?.program?.id}`}>
+                        {item?.program?.name || item?.program?.id}
+                    </a>
                 </Attribute>
             )}
             {item?.rbacobject?.currentUserRoles?.length > 0 && (
