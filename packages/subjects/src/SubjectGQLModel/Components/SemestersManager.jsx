@@ -26,7 +26,7 @@ const getSemesterName = (order) => {
  * DŮLEŽITÉ: Změny se neukládají okamžitě na server!
  * Komponenta pouze upravuje lokální stav a volá callback `onSemestersChange`
  * s novým seznamem semestrů. Skutečné uložení na server provádí nadřazená
- * komponenta (SubjectEditForm) po kliknutí na tlačítko "Uložit".
+ * komponenta (EditMode) po kliknutí na tlačítko "Uložit".
  *
  * @component
  * @param {Object} props

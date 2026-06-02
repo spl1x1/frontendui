@@ -9,6 +9,10 @@ import { SemesterInsertAsyncAction } from "../Queries/SemesterInsertAsyncAction"
 import { MediumEditableContent } from "./MediumEditableContent";
 
 /**
+ * @deprecated Nahrazeno komponentou EditMode (Components/EditMode.jsx),
+ * která přidává přepínač live/confirm režimu a je používána v UpdateBody.
+ * Tento formulář lze odstranit, jakmile nebudou žádné přímé importy.
+ *
  * SubjectEditForm - Hlavní formulář pro editaci entity Subject.
  *
  * Tato komponenta implementuje "draft/commit" pattern:
