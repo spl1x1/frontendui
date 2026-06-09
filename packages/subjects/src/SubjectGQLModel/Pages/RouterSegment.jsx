@@ -3,9 +3,10 @@ import { PageUpdateItem } from "./PageUpdateItem"
 import { PageCreateItem } from "./PageCreateItem"
 import { PageReadItem } from "./PageReadItem"
 import { PageDeleteItem } from "./PageDeleteItem"
+import { PageGenerate } from "./PageGenerate"
 
 import { DeleteItemURI, UpdateItemURI } from "../Components"
-import { CreateURI, ReadItemURI, VectorItemsURI } from "../Components"
+import { CreateURI, ReadItemURI, VectorItemsURI, GenerateURI} from "../Components"
 
 /**
  * Definice segmentů rout pro Template stránky.
@@ -52,15 +53,15 @@ export const SubjectGQLModelRouterSegments = [
     {
         path: UpdateItemURI,
         element: (<PageUpdateItem />),
-    },   
+    },
     {
         path: DeleteItemURI,
         element: (<PageDeleteItem />),
-    },   
-    // {
-    //     path: "sad",
-    //     element: (<PageReadItemRolesOn />)
-    // },
+    },
+    {
+         path: GenerateURI,
+         element: (<PageGenerate />)
+     },
     {
         path: VectorItemsURI.replace("list", ":any"),
         element: (<PageVector />),
@@ -68,5 +69,5 @@ export const SubjectGQLModelRouterSegments = [
     {
         path: ReadItemURI.replace("view", ":any"),
         element: (<PageReadItem />),
-    }    
+    }
 ]

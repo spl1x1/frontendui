@@ -8,6 +8,7 @@ export const CreateURI = `${modelURI}/create/`;
 export const ReadURI = `${modelURI}/view/`;
 export const UpdateURI = `${modelURI}/edit/`;
 export const DeleteURI = `${modelURI}/delete/`;
+export const GenerateURI = `${modelURI}/generate/`;
 
 export const LinkURI = ReadURI;
 export const VectorItemsURI = ListURI;
@@ -34,7 +35,7 @@ export const DeleteItemURI = `${DeleteURI}${idParam}`;
  * @example
  * // Example usage with a sample template entity:
  * const templateEntity = { id: 123, name: "Example Template Entity" };
- * 
+ *
  * <TemplateLink template={templateEntity} />
  * // Renders: <ProxyLink to="/template/template/view/123">Example Template Entity</ProxyLink>
  *
