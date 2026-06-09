@@ -26,7 +26,7 @@ const getSemesterName = (order) => {
  * DŮLEŽITÉ: Změny se neukládají okamžitě na server!
  * Komponenta pouze upravuje lokální stav a volá callback `onSemestersChange`
  * s novým seznamem semestrů. Skutečné uložení na server provádí nadřazená
- * komponenta (SubjectEditForm) po kliknutí na tlačítko "Uložit".
+ * komponenta (EditMode) po kliknutí na tlačítko "Uložit".
  *
  * @component
  * @param {Object} props
@@ -124,7 +124,10 @@ export const SemestersManager = ({
      * Odebrání semestru z lokálního seznamu (po potvrzení).
      */
     const handleRemoveSemester = useCallback((semesterId) => {
-        const newList = localSemesters.filter(s => s.id !== semesterId);
+        const filtered = localSemesters
+            .filter(s => s.id !== semesterId)
+            .sort((a, b) => (parseInt(a.order, 10) || 0) - (parseInt(b.order, 10) || 0));
+        const newList = filtered.map((s, i) => ({ ...s, order: i + 1 }));
         setLocalSemesters(newList);
         onSemestersChange(newList);
         // Close confirmation dialog

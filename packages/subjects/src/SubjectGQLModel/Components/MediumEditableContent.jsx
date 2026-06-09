@@ -21,13 +21,13 @@ import { SemestersManager } from "./SemestersManager"
  * Architektura:
  * - Komponenta NEŘEŠÍ ukládání dat na server
  * - Pouze předává události onChange/onBlur/onSemestersChange nadřazené komponentě
- * - Nadřazená komponenta (SubjectEditForm) řeší:
+ * - Nadřazená komponenta (EditMode) řeší:
  *   - Udržování draft stavu
  *   - Detekci změn (dirty)
  *   - Uložení na server po kliknutí na tlačítko
  *
  * Použití s různými strategiemi ukládání:
- * - SubjectEditForm: Explicitní ukládání tlačítkem "Uložit"
+ * - EditMode: Live nebo confirm režim s přepínačem (aktuálně používaný)
  * - ConfirmEdit: Ukládání s potvrzovacím dialogem
  * - LiveEdit: Automatické ukládání při změně (onBlur)
  *

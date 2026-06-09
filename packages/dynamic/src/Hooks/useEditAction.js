@@ -78,10 +78,14 @@ export const useEditAction = (
         [mapDraftToVars, entity, item]
     );
 
+    // Single-flight queue: pokud letí request, další draft se uloží do fronty
+    // a pošle se hned po dokončení aktuálního. Zabraňuje souběžným mutacím.
     const inFlightPromiseRef = useRef(null);
     const queuedDraftRef = useRef(null);
     const id = useRef(crypto.randomUUID());
 
+    // Vždy drží nejaktuálnější lastchange ze serveru — základ pro "optimistic locking".
+    // Bez toho by každý další update poslal starý timestamp a backend by ho odmítl.
     const latestLastchangeRef = useRef(item?.lastchange ?? null);
 
     const prepareDraft = useCallback((draft) => {

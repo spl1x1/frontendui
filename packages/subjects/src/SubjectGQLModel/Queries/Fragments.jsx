@@ -1,5 +1,17 @@
 import { createQueryStrLazy } from "@hrbolek/uoisfrontend-gql-shared"
 
+/**
+ * GraphQL fragmenty pro entitu Subject — hierarchicky uspořádané:
+ *   Link ⊂ Medium ⊂ Large
+ *
+ * LinkFragment  — skalární pole entity; použij pro seznamy (Table) a linky
+ * MediumFragment — Link + relace createdby/changedby/rbacobject/program; použij pro detailní zobrazení
+ * LargeFragment  — Medium + semesters + guarantors; použij pro edit stránku
+ *
+ * POZOR: LargeFragment (se semestry) nepoužívej v delete mutaci —
+ * načítání semestrů uvnitř delete transakce způsobuje transakční konflikty v backendu.
+ */
+
 const LinkFragmentStr = `
 fragment Link on SubjectGQLModel {
   __typename
